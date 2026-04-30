@@ -1047,6 +1047,12 @@ export default function App(){
   const[view,setView]=useState("marketplace");
   const[user,setUser]=useState(null);
   const[horses,setHorses]=useState(INIT_HORSES);
+
+useEffect(()=>{
+  supabase.from('horses').select('*').eq('status','published').then(({data})=>{
+    if(data&&data.length>0)setHorses(data);
+  });
+},[]);
   const[convs,setConvs]=useState(INIT_CONVS);
   const[sellers,setSellers]=useState(SELLERS);
   const[compareList,setCompareList]=useState([]);
