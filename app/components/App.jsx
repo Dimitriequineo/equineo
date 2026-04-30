@@ -957,8 +957,9 @@ const[email,setEmail]=useState("");
     setLoading(true);setErr("");
     try{
       if(isSignUp){
-        const{signUp}=await import('./supabase.js');
-        await signUp(email,password,name||email.split("@")[0],role);
+  const{data,error:signUpError}=await supabase.auth.signUp({email,password,options:{data:{name:name||email.split("@")[0],role}}});
+if(signUpError)throw signUpError;
+if(data.user){await supabase.from('profiles').insert({id:data.user.id,name:name||email.split("@")[0],role,plan:'free',avatar:(name||email).charAt(0).toUpperCase()});}      
         setErr("✅ Compte créé ! Vérifiez votre email pour confirmer.");
       } else {
         const{data,error}=await supabase.auth.signInWithPassword({email,password});
