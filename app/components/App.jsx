@@ -944,28 +944,73 @@ function MessagingView({user,convs,setConvs,horses,allUsers}){
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────────
 function Login({onLogin,setView}){
-  const[email,setEmail]=useState("");const[err,setErr]=useState("");
-  const ALL={...SELLERS,...BUYERS,...CARRIERS};
-  const handle=()=>{const found=Object.values(ALL).find(u=>u.email===email.trim());found?onLogin(found):setErr("Compte introuvable.");};
-  return(<div style={{minHeight:"80vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-    <div style={{background:G.card,border:`1px solid ${G.border}`,borderRadius:6,padding:"44px 50px",maxWidth:430,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.6)"}}>
-      <div style={{textAlign:"center",marginBottom:26}}><div style={{fontSize:24,marginBottom:10}}>🐴</div><div style={{fontFamily:G.fontDisplay,fontSize:22,fontWeight:700,marginBottom:6}}>Connexion</div><div style={{color:"#555",fontSize:12}}>Vendeurs · Acheteurs · Transporteurs</div></div>
-      <label style={{display:"block",fontFamily:G.fontUI,fontSize:9,letterSpacing:"0.15em",color:"#555",marginBottom:7}}>ADRESSE E-MAIL</label>
-      <input value={email} onChange={e=>{setEmail(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&handle()} placeholder="votre@email.fr" style={{width:"100%",padding:"11px 13px",background:"rgba(255,255,255,0.04)",border:`1px solid ${err?"rgba(200,50,50,0.5)":"rgba(255,255,255,0.1)"}`,borderRadius:3,color:"#fff",fontSize:14,fontFamily:G.fontBody,outline:"none",marginBottom:6}}/>
-      {err&&<div style={{color:"#c06060",fontSize:10,marginBottom:10,fontFamily:G.fontUI}}>{err}</div>}
-      <div style={{marginBottom:14}}/><Btn full onClick={handle}>ACCÉDER À MON COMPTE</Btn>
-      <div style={{background:"rgba(196,160,80,0.05)",border:`1px solid rgba(196,160,80,0.15)`,borderRadius:3,padding:"12px 13px",marginTop:14}}>
-        <div style={{color:"#444",fontSize:9,letterSpacing:"0.1em",fontFamily:G.fontUI,marginBottom:6}}>COMPTES DÉMO</div>
-        <div style={{color:"#555",fontSize:9,fontFamily:G.fontUI,marginBottom:3}}>ACHETEURS (favoris, alertes, comparateur)</div>
-        <div style={{color:"#7aadd9",fontSize:11}}>sophie@mail.fr · thomas@mail.fr</div>
-        <div style={{color:"#555",fontSize:9,fontFamily:G.fontUI,marginBottom:3,marginTop:7}}>VENDEURS</div>
-        <div style={{color:"#777",fontSize:11}}>contact@beaumont.fr · info@haras-ponant.fr</div>
-        <div style={{color:"#555",fontSize:9,fontFamily:G.fontUI,marginBottom:3,marginTop:7}}>TRANSPORTEURS</div>
-        <div style={{color:"#777",fontSize:11}}>contact@equitransport.fr</div>
+const[email,setEmail]=useState("");
+  const[password,setPassword]=useState("");
+  const[name,setName]=useState("");
+  const[role,setRole]=useState("buyer");
+  const[isSignUp,setIsSignUp]=useState(false);
+  const[err,setErr]=useState("");
+  const[loading,setLoading]=useState(false);
+
+  const handle=async()=>{
+    if(!email||!password){setErr("Veuillez remplir tous les champs.");return;}
+    setLoading(true);setErr("");
+    try{
+      if(isSignUp){
+        const{signUp}=await import('../supabase.js');
+        await signUp(email,password,name||email.split("@")[0],role);
+        setErr("✅ Compte créé ! Vérifiez votre email pour confirmer.");
+      } else {
+        const{createClient}=await import('@supabase/supabase-js');
+        const supabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+        const{data,error}=await supabase.auth.signInWithPassword({email,password});
+        if(error)throw error;
+        const{data:profile}=await supabase.from('profiles').select('*').eq('id',data.user.id).single();
+        if(profile)onLogin({...profile,email});
+        else setErr("Profil introuvable.");
+      }
+    }catch(e){setErr(e.message||"Une erreur est survenue.");}
+    setLoading(false);
+  };
+
+  return(
+    <div style={{minHeight:"80vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{background:G.card,border:`1px solid ${G.border}`,borderRadius:6,padding:"44px 50px",maxWidth:430,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.6)"}}>
+        <div style={{textAlign:"center",marginBottom:26}}>
+          <div style={{fontSize:24,marginBottom:10}}>🐴</div>
+          <div style={{fontFamily:G.fontDisplay,fontSize:22,fontWeight:700,marginBottom:6}}>{isSignUp?"Créer un compte":"Connexion"}</div>
+          <div style={{color:"#555",fontSize:12}}>Vendeurs · Acheteurs · Transporteurs</div>
+        </div>
+        {isSignUp&&(
+          <>
+            <label style={{display:"block",fontFamily:G.fontUI,fontSize:9,letterSpacing:"0.15em",color:"#555",marginBottom:7}}>VOTRE NOM</label>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Prénom Nom" style={{width:"100%",padding:"11px 13px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:3,color:"#fff",fontSize:14,fontFamily:G.fontBody,outline:"none",marginBottom:12}}/>
+            <label style={{display:"block",fontFamily:G.fontUI,fontSize:9,letterSpacing:"0.15em",color:"#555",marginBottom:7}}>VOUS ÊTES</label>
+            <div style={{display:"flex",gap:8,marginBottom:12}}>
+              {[["buyer","Acheteur"],["seller","Vendeur"],["carrier","Transporteur"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setRole(v)} style={{flex:1,padding:"9px",background:role===v?`linear-gradient(135deg,${G.gold},${G.goldLight})`:"rgba(255,255,255,0.04)",border:`1px solid ${role===v?"transparent":"rgba(255,255,255,0.1)"}`,borderRadius:3,color:role===v?"#000":"#888",cursor:"pointer",fontFamily:G.fontUI,fontSize:10,fontWeight:role===v?700:400}}>{l}</button>
+              ))}
+            </div>
+          </>
+        )}
+        <label style={{display:"block",fontFamily:G.fontUI,fontSize:9,letterSpacing:"0.15em",color:"#555",marginBottom:7}}>ADRESSE E-MAIL</label>
+        <input value={email} onChange={e=>{setEmail(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&handle()} placeholder="votre@email.fr" style={{width:"100%",padding:"11px 13px",background:"rgba(255,255,255,0.04)",border:`1px solid ${err&&!err.includes("✅")?"rgba(200,50,50,0.5)":"rgba(255,255,255,0.1)"}`,borderRadius:3,color:"#fff",fontSize:14,fontFamily:G.fontBody,outline:"none",marginBottom:12}}/>
+        <label style={{display:"block",fontFamily:G.fontUI,fontSize:9,letterSpacing:"0.15em",color:"#555",marginBottom:7}}>MOT DE PASSE</label>
+        <input type="password" value={password} onChange={e=>{setPassword(e.target.value);setErr("");}} onKeyDown={e=>e.key==="Enter"&&handle()} placeholder="••••••••" style={{width:"100%",padding:"11px 13px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:3,color:"#fff",fontSize:14,fontFamily:G.fontBody,outline:"none",marginBottom:6}}/>
+        {err&&<div style={{color:err.includes("✅")?"#70c080":"#c06060",fontSize:11,marginBottom:10,fontFamily:G.fontUI,marginTop:6}}>{err}</div>}
+        <div style={{marginBottom:14}}/>
+        <Btn full onClick={handle} style={{opacity:loading?0.6:1}}>
+          {loading?"Chargement...":(isSignUp?"CRÉER MON COMPTE":"CONNEXION")}
+        </Btn>
+        <div style={{textAlign:"center",marginTop:16}}>
+          <button onClick={()=>{setIsSignUp(v=>!v);setErr("");}} style={{background:"transparent",border:"none",color:G.gold,fontSize:11,fontFamily:G.fontUI,cursor:"pointer",textDecoration:"underline",textUnderlineOffset:3}}>
+            {isSignUp?"Déjà un compte ? Se connecter":"Pas de compte ? S'inscrire"}
+          </button>
+        </div>
       </div>
     </div>
-  </div>);
-}
+  );
+} 
 
 // ─── SIMPLE PAGES ─────────────────────────────────────────────────────────────────
 function TransportPage({setView}){return(<div style={{maxWidth:800,margin:"0 auto",padding:"60px 44px 80px",textAlign:"center"}}><div style={{fontFamily:G.fontDisplay,fontSize:36,fontWeight:700,marginBottom:16}}>🚛 Transport équestre</div><p style={{color:"#666",fontSize:15,maxWidth:450,margin:"0 auto 32px",lineHeight:1.75}}>Demandez un devis depuis la fiche d'un cheval. Nos transporteurs partenaires vous répondent directement.</p><Btn onClick={()=>setView("marketplace")}>Parcourir les chevaux</Btn></div>);}
