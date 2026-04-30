@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { supabase } from '../supabase';
+
 
 const G = {
   gold:"#c4a050",goldLight:"#e8c870",dark:"#080808",
