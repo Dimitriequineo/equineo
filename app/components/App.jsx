@@ -11,8 +11,8 @@ const G = {
   fontBody:"'Cormorant Garamond', Georgia, serif",
 };
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  "https://vxkxkilphwbidfqgffpv.supabase.co",
+  "sb_publishable_sPjeVcxE_K5A4y2dN0M6tA_uJZ-fP5L"
 );
 const PLANS={
   free:{id:"free",label:"Gratuit",price:0,annonces:1,badge:false,color:"#555"},
