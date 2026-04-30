@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-
+import { createClient } from '@supabase/supabase-js';
 
 const G = {
   gold:"#c4a050",goldLight:"#e8c870",dark:"#080808",
@@ -10,7 +10,10 @@ const G = {
   fontUI:"'Montserrat', sans-serif",
   fontBody:"'Cormorant Garamond', Georgia, serif",
 };
-
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 const PLANS={
   free:{id:"free",label:"Gratuit",price:0,annonces:1,badge:false,color:"#555"},
   particulier:{id:"particulier",label:"Particulier",price:19,annonces:3,badge:false,color:"#8a9ab0"},
