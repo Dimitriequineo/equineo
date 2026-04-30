@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-
+import { supabase } from '../supabase';
 const G = {
   gold:"#c4a050",goldLight:"#e8c870",dark:"#080808",
   card:"#0e0e0e",card2:"#111",
@@ -961,8 +961,6 @@ const[email,setEmail]=useState("");
         await signUp(email,password,name||email.split("@")[0],role);
         setErr("✅ Compte créé ! Vérifiez votre email pour confirmer.");
       } else {
-        const{createClient}=await import('@supabase/supabase-js');
-        const supabase=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
         const{data,error}=await supabase.auth.signInWithPassword({email,password});
         if(error)throw error;
         const{data:profile}=await supabase.from('profiles').select('*').eq('id',data.user.id).single();
