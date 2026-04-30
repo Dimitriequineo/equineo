@@ -957,7 +957,7 @@ const[email,setEmail]=useState("");
     setLoading(true);setErr("");
     try{
       if(isSignUp){
-        const{signUp}=await import('../supabase.js');
+        const{signUp}=await import('./supabase.js');
         await signUp(email,password,name||email.split("@")[0],role);
         setErr("✅ Compte créé ! Vérifiez votre email pour confirmer.");
       } else {
